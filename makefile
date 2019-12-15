@@ -32,7 +32,7 @@ lint:
 test:
 	go test -v -race $(TEST) $(TESTARGS) -covermode=atomic
 
-coverprofile: mock
+coverprofile:
 	go test -v -race $(TEST) $(TESTARGS) -covermode=atomic -coverprofile=coverage.txt
 
 coverage: coverprofile

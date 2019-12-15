@@ -9,7 +9,7 @@ DIR="$( cd -P "$( dirname "$SOURCE" )/.." && pwd )"
 cd "$DIR"
 
 # Change project name
-grep -rli --exclude-dir=node_modules 'golang-starter' * | xargs -I@ sed -i "" 's/golang-starter/'"${PWD##*/}"'/g' @
+grep -rli --exclude-dir=node_modules 'reconnect-core' * | xargs -I@ sed -i "" 's/reconnect-core/'"${PWD##*/}"'/g' @
 
 # Install and run Commitizen locally
 npm install --save-dev commitizen

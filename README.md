@@ -1,6 +1,6 @@
-# golang-starter
-[![Build Status](https://travis-ci.com/chenpengfei/golang-starter.svg)](https://travis-ci.com/chenpengfei/golang-starter)
-[![Coverage Status](https://coveralls.io/repos/github/chenpengfei/golang-starter/badge.svg)](https://coveralls.io/github/chenpengfei/golang-starter)
+# reconnect-core
+[![Build Status](https://travis-ci.com/chenpengfei/reconnect-core.svg)](https://travis-ci.com/chenpengfei/reconnect-core)
+[![Coverage Status](https://coveralls.io/repos/github/chenpengfei/reconnect-core/badge.svg)](https://coveralls.io/github/chenpengfei/reconnect-core)
 
 Golang Starter，用于创建符合 Semantic Release 规范的初始仓库
 

@@ -1,8 +1,5 @@
-module github.com/chenpengfei/golang-starter
+module github.com/chenpengfei/reconnect-core
 
 go 1.12
 
-require (
-	github.com/golang/mock v1.3.1
-	github.com/stretchr/testify v1.4.0
-)
+require github.com/chenpengfei/backoff v1.0.0
