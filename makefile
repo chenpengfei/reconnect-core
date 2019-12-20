@@ -20,8 +20,11 @@ download:
 	go mod tidy
 	go mod download
 
-run:
-	go run cmd/app/main.go
+client:
+	go run examples/client/main.go
+
+server:
+	go run examples/server/main.go
 
 benchmark:
 	go test -bench=. pkg/tools/cal_test.go pkg/tools/cal.go

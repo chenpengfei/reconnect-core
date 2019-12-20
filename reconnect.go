@@ -3,7 +3,9 @@ package reconnect_core
 import (
 	"context"
 	"github.com/chenpengfei/backoff"
+	"io"
 	"net"
+	"time"
 )
 
 type OnConnect func(conn *Reconnection)
@@ -18,16 +20,23 @@ const (
 )
 
 type Reconnection struct {
-	net.Conn
+	io.ReadWriteCloser
 
-	ctx      context.Context
-	network  string
-	address  string
-	strategy Strategy
+	operation backoff.Operation
+	backoff   backoff.BackOff
+
+	strategy            Strategy
+	initialInterval     time.Duration
+	randomizationFactor float64
+	multiplier          float64
+	maxInterval         time.Duration
+	maxElapsedTime      time.Duration
 
 	onNotify  backoff.Notify
 	onConnect OnConnect
 	onError   OnError
+
+	retrying bool
 }
 
 func (re *Reconnection) OnConnect(onConnect OnConnect) {
@@ -43,55 +52,70 @@ func (re *Reconnection) OnNotify(onNotify backoff.Notify) {
 }
 
 func (re *Reconnection) Close() error {
-	err := re.Conn.Close()
-	if err == nil {
-		re.retry()
-	}
+	err := re.ReadWriteCloser.Close()
+	re.retry()
 	return err
 }
 
 func (re *Reconnection) retry() {
-	go func() {
-		var b backoff.BackOff
-		switch re.strategy {
-		case Fibonacci:
-		case Exponential:
-			b = backoff.NewExponentialBackOff()
-		default:
-			b = backoff.NewExponentialBackOff()
-		}
+	if re.retrying {
+		return
+	}
+	re.retrying = true
 
-		err := backoff.RetryNotify(
-			func() error {
-				conn, err := net.Dial(re.network, re.address)
-				if err == nil {
-					re.Conn = conn
-				}
-				return err
-			},
-			backoff.WithContext(b, re.ctx),
-			re.onNotify)
+	go func() {
+		err := backoff.RetryNotify(re.operation, re.backoff, re.onNotify)
 
 		if err != nil {
 			re.onError(err)
 		} else {
 			re.onConnect(re)
 		}
+
+		re.retrying = false
 	}()
 }
 
-func NewReconnection(address string, opts ...Option) *Reconnection {
+func NewReconnection(ctx context.Context, network, address string, opts ...Option) *Reconnection {
 	re := &Reconnection{
-		ctx:      context.Background(),
-		network:  "tcp",
-		strategy: Exponential,
+		strategy:            Exponential,
+		initialInterval:     backoff.DefaultInitialInterval,
+		randomizationFactor: backoff.DefaultRandomizationFactor,
+		multiplier:          backoff.DefaultMultiplier,
+		maxInterval:         backoff.DefaultMaxInterval,
+		maxElapsedTime:      backoff.DefaultMaxElapsedTime,
 	}
 
 	for _, opt := range opts {
 		opt(re)
 	}
 
-	re.address = address
+	var initExponentialBackOff = func(eb *backoff.ExponentialBackOff) backoff.BackOff {
+		eb.InitialInterval = re.initialInterval
+		eb.RandomizationFactor = re.randomizationFactor
+		eb.Multiplier = re.multiplier
+		eb.MaxInterval = re.maxInterval
+		eb.MaxElapsedTime = re.maxElapsedTime
+		return eb
+	}
+
+	var b backoff.BackOff
+	switch re.strategy {
+	case Fibonacci:
+	case Exponential:
+		b = initExponentialBackOff(backoff.NewExponentialBackOff())
+	default:
+		b = initExponentialBackOff(backoff.NewExponentialBackOff())
+	}
+
+	re.operation = func() error {
+		conn, err := net.Dial(network, address)
+		if err == nil {
+			re.ReadWriteCloser = conn
+		}
+		return err
+	}
+	re.backoff = backoff.WithContext(b, ctx)
 
 	re.onConnect = func(conn *Reconnection) {}
 	re.onError = func(err error) {}
