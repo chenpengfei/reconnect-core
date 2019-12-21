@@ -3,12 +3,8 @@ package reconnect_core
 import (
 	"context"
 	"github.com/chenpengfei/backoff"
-	"io"
-	"net"
 	"time"
 )
-
-type OnConnect func(conn *Reconnection)
 
 type OnError func(err error)
 
@@ -20,8 +16,6 @@ const (
 )
 
 type Reconnection struct {
-	io.ReadWriteCloser
-
 	operation backoff.Operation
 	backoff   backoff.BackOff
 
@@ -32,51 +26,13 @@ type Reconnection struct {
 	maxInterval         time.Duration
 	maxElapsedTime      time.Duration
 
-	onNotify  backoff.Notify
-	onConnect OnConnect
-	onError   OnError
+	onNotify backoff.Notify
+	onError  OnError
 
 	retrying bool
 }
 
-func (re *Reconnection) OnConnect(onConnect OnConnect) {
-	re.onConnect = onConnect
-}
-
-func (re *Reconnection) OnError(onError OnError) {
-	re.onError = onError
-}
-
-func (re *Reconnection) OnNotify(onNotify backoff.Notify) {
-	re.onNotify = onNotify
-}
-
-func (re *Reconnection) Close() error {
-	err := re.ReadWriteCloser.Close()
-	re.retry()
-	return err
-}
-
-func (re *Reconnection) retry() {
-	if re.retrying {
-		return
-	}
-	re.retrying = true
-
-	go func() {
-		err := backoff.RetryNotify(re.operation, re.backoff, re.onNotify)
-
-		if err != nil {
-			re.onError(err)
-		} else {
-			re.onConnect(re)
-		}
-
-		re.retrying = false
-	}()
-}
-
-func NewReconnection(ctx context.Context, network, address string, opts ...Option) *Reconnection {
+func NewReconnection(ctx context.Context, opts ...Option) *Reconnection {
 	re := &Reconnection{
 		strategy:            Exponential,
 		initialInterval:     backoff.DefaultInitialInterval,
@@ -84,6 +40,9 @@ func NewReconnection(ctx context.Context, network, address string, opts ...Optio
 		multiplier:          backoff.DefaultMultiplier,
 		maxInterval:         backoff.DefaultMaxInterval,
 		maxElapsedTime:      backoff.DefaultMaxElapsedTime,
+		onError:             func(err error) {},
+		onNotify:            func(err error, duration time.Duration) {},
+		retrying:            false,
 	}
 
 	for _, opt := range opts {
@@ -108,19 +67,27 @@ func NewReconnection(ctx context.Context, network, address string, opts ...Optio
 		b = initExponentialBackOff(backoff.NewExponentialBackOff())
 	}
 
-	re.operation = func() error {
-		conn, err := net.Dial(network, address)
-		if err == nil {
-			re.ReadWriteCloser = conn
-		}
-		return err
-	}
 	re.backoff = backoff.WithContext(b, ctx)
 
-	re.onConnect = func(conn *Reconnection) {}
-	re.onError = func(err error) {}
-
-	re.retry()
-
 	return re
+}
+
+func (rc *Reconnection) retry(done func(error)) {
+	if rc.retrying {
+		return
+	}
+	rc.retrying = true
+
+	go func() {
+		done(backoff.RetryNotify(rc.operation, rc.backoff, rc.onNotify))
+		rc.retrying = false
+	}()
+}
+
+func (rc *Reconnection) OnError(onError OnError) {
+	rc.onError = onError
+}
+
+func (rc *Reconnection) OnNotify(onNotify backoff.Notify) {
+	rc.onNotify = onNotify
 }
