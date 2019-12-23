@@ -9,8 +9,6 @@ import (
 type WebsocketReconnection struct {
 	*websocket.Conn
 	*Reconnection
-
-	onConnect func(*WebsocketReconnection)
 }
 
 func NewWebsocketReconnection(ctx context.Context, urlStr string, requestHeader http.Header, opts ...Option) *WebsocketReconnection {
@@ -26,25 +24,13 @@ func NewWebsocketReconnection(ctx context.Context, urlStr string, requestHeader 
 		return err
 	}
 
-	wrc.retry(wrc.retryDone)
+	wrc.retry()
 
 	return wrc
 }
 
-func (wrc *WebsocketReconnection) retryDone(err error) {
-	if err == nil {
-		wrc.onConnect(wrc)
-	} else {
-		wrc.onError(err)
-	}
-}
-
 func (wrc *WebsocketReconnection) Close() error {
 	err := wrc.Conn.Close()
-	wrc.retry(wrc.retryDone)
+	wrc.retry()
 	return err
-}
-
-func (wrc *WebsocketReconnection) OnConnect(onConnect func(*WebsocketReconnection)) {
-	wrc.onConnect = onConnect
 }

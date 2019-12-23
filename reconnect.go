@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+type OnConnect func()
+
 type OnError func(err error)
 
 type Strategy string
@@ -26,8 +28,9 @@ type Reconnection struct {
 	maxInterval         time.Duration
 	maxElapsedTime      time.Duration
 
-	onNotify backoff.Notify
-	onError  OnError
+	onConnect func()
+	onNotify  backoff.Notify
+	onError   OnError
 
 	retrying bool
 }
@@ -72,16 +75,26 @@ func NewReconnection(ctx context.Context, opts ...Option) *Reconnection {
 	return re
 }
 
-func (rc *Reconnection) retry(done func(error)) {
+func (rc *Reconnection) retry() {
 	if rc.retrying {
 		return
 	}
 	rc.retrying = true
 
 	go func() {
-		done(backoff.RetryNotify(rc.operation, rc.backoff, rc.onNotify))
+		err := backoff.RetryNotify(rc.operation, rc.backoff, rc.onNotify)
 		rc.retrying = false
+
+		if err != nil {
+			rc.onError(err)
+		} else {
+			rc.onConnect()
+		}
 	}()
+}
+
+func (rc *Reconnection) OnConnect(connect OnConnect) {
+	rc.onConnect = connect
 }
 
 func (rc *Reconnection) OnError(onError OnError) {

@@ -8,8 +8,6 @@ import (
 type NetReconnection struct {
 	net.Conn
 	*Reconnection
-
-	onConnect func(*NetReconnection)
 }
 
 func NewNetReconnection(ctx context.Context, network, address string, opts ...Option) *NetReconnection {
@@ -25,25 +23,13 @@ func NewNetReconnection(ctx context.Context, network, address string, opts ...Op
 		return err
 	}
 
-	nrc.Reconnection.retry(nrc.retryDone)
+	nrc.Reconnection.retry()
 
 	return nrc
 }
 
-func (nrc *NetReconnection) retryDone(err error) {
-	if err == nil {
-		nrc.onConnect(nrc)
-	} else {
-		nrc.onError(err)
-	}
-}
-
 func (nrc *NetReconnection) Close() error {
 	err := nrc.Conn.Close()
-	nrc.retry(nrc.retryDone)
+	nrc.retry()
 	return err
-}
-
-func (nrc *NetReconnection) OnConnect(onConnect func(*NetReconnection)) {
-	nrc.onConnect = onConnect
 }

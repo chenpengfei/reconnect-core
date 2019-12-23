@@ -19,22 +19,17 @@ func main() {
 
 	re := rc.NewWebsocketReconnection(ctx, u.String(), nil,
 		rc.WithMaxElapsedTime(time.Duration(math.MaxInt64)))
-	re.OnConnect(func(conn *rc.WebsocketReconnection) {
-		log.WithField("address", address).Info("connected to server")
-		go func() {
-			for {
-				data := []byte(time.Now().String())
-				err := conn.WriteMessage(websocket.TextMessage, data)
-				if err != nil {
-					conn.Close()
-					return
-				}
-
-				log.WithField("message", string(data)).Info("send data to server")
-
-				time.Sleep(time.Second)
+	re.OnConnect(func() {
+		for {
+			data := time.Now().String()
+			log.WithField("data", data).Info("write message")
+			err := re.WriteMessage(websocket.TextMessage, []byte(time.Now().String()))
+			if err != nil {
+				_ = re.Close()
+				return
 			}
-		}()
+			time.Sleep(100 * time.Millisecond)
+		}
 	})
 	re.OnNotify(func(err error, duration time.Duration) {
 		log.WithError(err).WithField("next", duration).Error("retry...")

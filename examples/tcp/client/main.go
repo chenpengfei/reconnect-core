@@ -16,18 +16,18 @@ func main() {
 	address := "localhost:8080"
 
 	re := rc.NewNetReconnection(ctx, "tcp", address)
-	re.OnConnect(func(conn *rc.NetReconnection) {
+	re.OnConnect(func() {
 		log.WithField("address", address).Info("connected to server")
 		go func() {
 			head := make([]byte, 4)
-			writer := bufio.NewWriter(conn)
+			writer := bufio.NewWriter(re)
 
 			for {
 				data := time.Now().String()
 				binary.LittleEndian.PutUint32(head, uint32(len(data)))
 				n, err := writer.Write(head)
 				if err != nil {
-					conn.Close()
+					re.Close()
 					return
 				}
 				if n != len(head) {
@@ -35,7 +35,7 @@ func main() {
 				}
 				n, err = writer.Write([]byte(data))
 				if err != nil {
-					conn.Close()
+					re.Close()
 					return
 				}
 				if n != len(data) {
