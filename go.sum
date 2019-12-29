@@ -2,6 +2,8 @@ github.com/chenpengfei/backoff v1.0.0 h1:SUsc0inJnXo9dQ/kKu+GUZ0wETUvaLNKcs6Ufne
 github.com/chenpengfei/backoff v1.0.0/go.mod h1:SOVQPtApnwLtzjazHUqbVigyAEdFqeAt191iN7qzfY0=
 github.com/chenpengfei/backoff v1.1.0 h1:2HKOkQ+GxXR2eR25sF0MefXqzZ6h7tIt1FYEsU3WsAA=
 github.com/chenpengfei/backoff v1.1.0/go.mod h1:6fuM/6iv79z1Jhj/oKuSkt4HcTR650fmd7IWOvnBUoo=
+github.com/chenpengfei/backoff v1.2.0 h1:0Bc1yq4e7VHHRBEiqQCLIDWGJnvjTn9xtPYE0YKVAM8=
+github.com/chenpengfei/backoff v1.2.0/go.mod h1:6fuM/6iv79z1Jhj/oKuSkt4HcTR650fmd7IWOvnBUoo=
 github.com/chenpengfei/context-wrapper v1.0.0 h1:YI4YMjRpzQNn014mKi6c+q9qPhZlzNMJPzOXnO6uB74=
 github.com/chenpengfei/context-wrapper v1.0.0/go.mod h1:Q5ERp8beMjXXpFeWeXhZvHqm+ZPrpOrxeNujwoYBLZ4=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

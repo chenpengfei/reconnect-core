@@ -20,17 +20,11 @@ download:
 	go mod tidy
 	go mod download
 
-tcp_client:
+client:
 	go run examples/tcp/client/main.go
 
-tcp_server:
+server:
 	go run examples/tcp/server/main.go
-
-ws_client:
-	go run examples/websocket/client/main.go
-
-ws_server:
-	go run examples/websocket/server/main.go
 
 benchmark:
 	go test -bench=. pkg/tools/cal_test.go pkg/tools/cal.go
